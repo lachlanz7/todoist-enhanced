@@ -4,6 +4,13 @@ import type { Page } from '@playwright/test';
 /* Fork feature: deadlines on every plan, the Deadlines page, and rollover.
    All on the demo account, which never reaches Todoist. */
 
+/** A day from today as the date picker reads it: "26 October". */
+const spokenIn = (days: number): string => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return `${d.getDate()} ${d.toLocaleString('en-US', { month: 'long' })}`;
+};
+
 /** A day from today, as `yyyy-MM-dd` in local time. */
 const isoIn = (days: number): string => {
   const d = new Date();
@@ -55,7 +62,7 @@ test('a late task with a deadline rolls to today, and Undo puts it back', async 
   const title = (await late.locator('.ttitle').innerText()).trim();
   await late.locator('.ttitle').click();
   await page.locator('.prop[data-prop="deadline"] button').first().click();
-  await page.getByPlaceholder('Tomorrow, next Sunday, 12 April…').fill(isoIn(6));
+  await page.getByPlaceholder('Tomorrow, next Sunday, 12 April…').fill(spokenIn(6));
   await page.keyboard.press('Enter');
   await page.keyboard.press('Escape');
 

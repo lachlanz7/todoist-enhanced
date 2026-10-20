@@ -146,8 +146,9 @@ should be rare and short. The upstream files it touches: `domain/dates.ts`
 `domain/sidebar.ts` (the page), `store/prefs.ts` (settings), `store/tasks.ts`
 and `store/selectors.ts`, `App.tsx`, `TaskRow`, `TaskDetail`, `Composer`,
 `TableCells`, `TaskActions`, `Sidebar`, `SidebarNavEditor`, `Search`,
-`SettingsView`, `hooks/useRoute.ts`, `main.tsx`, the two i18n files, and two
-sidebar tests. If upstream ever ships its own free-plan deadlines, prefer
+`SettingsView`, `hooks/useRoute.ts`, `main.tsx`, `demo/demoData.ts`, the two
+i18n files, and one-line updates to four upstream tests that list the sidebar
+entries or the Settings sections, or looked up a button named "Deadline". If upstream ever ships its own free-plan deadlines, prefer
 theirs.
 
 ## Limitations

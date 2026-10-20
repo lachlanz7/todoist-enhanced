@@ -23,7 +23,7 @@ test('#143 a date typed with a time keeps the time', async ({ demo: page }) => {
 test('#143 a deadline is a day: the time typed there is said to be left out', async ({ demo: page }) => {
   await page.keyboard.press('q');
   await page.locator('.composer-name').fill('Send the quote');
-  await page.getByRole('button', { name: 'Deadline' }).click();
+  await page.getByRole('button', { name: 'Deadline', exact: true }).click();
   await page.locator('.datepanel input').fill('tomorrow at 14:30');
   await expect(page.locator('.datepanel .pickerreading')).toContainText('takes a day only');
   await page.keyboard.press('Enter');

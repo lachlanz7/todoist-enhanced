@@ -114,7 +114,7 @@ test.describe('setup and settings (v2)', () => {
     await go(page, '#/settings');
     const sections = await page.locator('.setnav a').allInnerTexts();
     expect(sections).toEqual([
-      'Account', 'General', 'Appearance', 'Sidebar', 'Lists', 'Features and planning', 'Conflict detection', 'About',
+      'Account', 'General', 'Appearance', 'Sidebar', 'Lists', 'Features and planning', 'Deadlines', 'Conflict detection', 'About',
     ]);
     await page.getByRole('button', { name: 'Setup', exact: true }).click();
     await expect(page.locator('.setup-name')).toHaveText('Robin');
