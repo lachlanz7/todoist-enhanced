@@ -180,3 +180,19 @@ describe('escalation', () => {
     expect(change).toMatchObject({ reason: 'capped', to: '2026-10-18', priority: 4 });
   });
 });
+
+describe('descriptions as Lachlan writes them', () => {
+  // Topic lines first, the deadline line last with no blank line before it.
+  const description = 'Week 9 tutorial\nTopics: Fourier series\nLaplace transforms\nDeadline: 2026-10-25';
+
+  it('reads the deadline and rolls a late tutorial task, stopping at Sunday', () => {
+    const [change] = planRollover([item({ description, due: due('2026-10-19') })], settings, now);
+    expect(change).toMatchObject({ reason: 'rolled', to: '2026-10-20' });
+    const capped = planRollover([item({ description, due: due('2026-10-19') })], settings, new Date(2026, 9, 28));
+    expect(capped[0]).toMatchObject({ reason: 'capped', to: '2026-10-25' });
+  });
+
+  it('leaves a lecture subtask with a deadline but no date alone', () => {
+    expect(planRollover([item({ id: 'sub', parent_id: 'lecture', description, due: null })], { ...settings, rollUndated: true }, now)).toEqual([]);
+  });
+});

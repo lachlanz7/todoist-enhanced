@@ -159,3 +159,14 @@ describe('typing a deadline in braces', () => {
     expect(readDeadlineToken('Essay', now)).toBeNull();
   });
 });
+
+describe('a multi-line description ending in the deadline line', () => {
+  const text = 'Week 9 tutorial\nTopics: Fourier series\nDeadline: 2026-10-25';
+  it('reads it, hides it, and shows the topic lines', () => {
+    expect(descriptionDeadline(text)).toBe('2026-10-25');
+    expect(splitDeadlineTail(text)).toEqual({ body: 'Week 9 tutorial\nTopics: Fourier series', tail: '\nDeadline: 2026-10-25' });
+  });
+  it('keeps the topic lines when the deadline changes', () => {
+    expect(withDeadlineLine(text, '2026-11-01')).toBe('Week 9 tutorial\nTopics: Fourier series\n\nDeadline: 2026-11-01');
+  });
+});
