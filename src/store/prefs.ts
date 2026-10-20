@@ -2,6 +2,7 @@ import type { Locale } from '@/i18n';
 import type { EstimateStorage, ViewId } from '@/domain/types';
 import { DEFAULT_WEEK_LABEL, defaultViewPrefs, type ViewPrefs } from '@/domain/types';
 import { defaultConflictSettings, type ConflictSettings } from '@/domain/conflicts';
+import { defaultDeadlineSettings, readDeadlineSettings, type DeadlineSettings } from '@/domain/deadlines';
 import { defaultCapacity, type DailyCapacity } from '@/domain/load';
 import { DATE_FORMATS, type DateFormat } from '@/domain/dates';
 import { DEFAULT_DUST_MONTHS, isDustMonths, type DustMonths } from '@/domain/views';
@@ -413,6 +414,8 @@ export interface Preferences {
   seenVersion: string | null;
   /** The one-time note for Todoist's own people has been shown to this account. */
   hireNoteSeen: boolean;
+  /** Where deadlines are kept, rollover and how early a deadline is flagged (fork feature, domain/deadlines). */
+  deadlines: DeadlineSettings;
 }
 
 export const defaultPreferences = (locale: Locale): Preferences => ({
@@ -463,6 +466,7 @@ export const defaultPreferences = (locale: Locale): Preferences => ({
   whatsNew: true,
   seenVersion: null,
   hireNoteSeen: false,
+  deadlines: defaultDeadlineSettings(),
 });
 
 /**
@@ -560,6 +564,7 @@ export function hydratePreferences(stored: unknown, locale: Locale): Preferences
       ? s.seenVersion
       : null,
     hireNoteSeen: s.hireNoteSeen === true,
+    deadlines: readDeadlineSettings(s.deadlines),
     views: s.views ?? {},
   };
 }

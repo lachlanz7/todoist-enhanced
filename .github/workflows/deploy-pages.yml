@@ -1,0 +1,53 @@
+name: Deploy to GitHub Pages
+
+# Fork only, and only when switched on: builds the fork's branch and publishes
+# it at https://<owner>.github.io/<repository>/.
+#
+# To switch it on: Settings → Pages → Source: GitHub Actions, then Settings →
+# Secrets and variables → Actions → Variables → DEPLOY_PAGES = true.
+#
+# Sign in on that site with "Use an API token instead". "Continue with Todoist"
+# (OAuth) needs an OAuth app registered for that address and is not set up
+# here. The token stays in your browser; it is never part of the build.
+on:
+  push:
+    branches: [feat/deadlines]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: vars.DEPLOY_PAGES == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          PUBLIC_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

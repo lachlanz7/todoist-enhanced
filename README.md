@@ -24,6 +24,18 @@ affiliated with, or supported by Todoist.**
 
 ---
 
+## This fork
+
+**lachlanz7/todoist-enhanced** is a fork that adds deadlines on Todoist's free
+plan (kept as a `Deadline: YYYY-MM-DD` line in the task description), rollover
+of late tasks to today (never past their deadline, never for repeating tasks),
+a Deadlines page and `{Nov 2}` deadline syntax in the composer.
+`main` mirrors upstream; the fork lives on `feat/deadlines`.
+Deploying, syncing with upstream and the optional scheduled rollover are in
+[docs/fork.md](docs/fork.md).
+
+---
+
 ## Contents
 
 - [Mac app](#mac-app)

@@ -235,6 +235,7 @@ export function Composer({
     if (reading === 'recurrence') setRecurrence(null);
     if (reading === 'priority') setPriority(4);
     if (reading === 'duration') setMinutes(null);
+    if (reading === 'deadline') setDeadline('');
     if (reading === 'assignee') setResponsibleUid(defaultResponsibleUid ?? null);
     if (reading === 'project') { setProjectId(fallbackProject); setSectionId(''); }
     /* A tag read from the name needs nothing here: it is read again from the
@@ -254,7 +255,18 @@ export function Composer({
    * afterwards stays changed until the name says something new.
    */
   const { date: readDate, projectId: readProject, sectionId: readSection,
-    priority: readPriority, minutes: readMinutes, recurrence: readRepeat, assigneeId: readAssignee } = parsed;
+    priority: readPriority, minutes: readMinutes, recurrence: readRepeat, assigneeId: readAssignee,
+    deadline: readDeadline } = parsed;
+
+  /* `{Nov 2}` in the name fills the Deadline field, and lets go of it when the
+     braces are deleted, unless the field was changed by hand since. */
+  const wasDeadline = useRef<string | null>(null);
+  useEffect(() => {
+    const was = wasDeadline.current;
+    if (was && !readDeadline) setDeadline((now) => (now === was ? '' : now));
+    wasDeadline.current = readDeadline;
+    if (readDeadline) setDeadline(readDeadline);
+  }, [readDeadline, refusals]);
 
   /*
    * Each of these also watches `refusals`, whose identity changes only when a
@@ -405,6 +417,7 @@ export function Composer({
           priority: toTodoistPriority(read.priority ?? 4),
           labels: read.labels,
           ...(read.minutes !== null ? { estimateMinutes: read.minutes } : {}),
+          ...(read.deadline ? { deadline: { date: read.deadline, lang: 'en' } } : {}),
           due: read.recurrence
             ? { string: read.recurrence.string, lang: read.recurrence.lang, is_recurring: true }
             : read.date

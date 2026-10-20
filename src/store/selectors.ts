@@ -6,6 +6,7 @@ import {
 } from '@/domain/types';
 import { estimateOf, effectiveEstimate } from '@/domain/estimates';
 import { dueDate, deadlineDate } from '@/domain/dates';
+import { deadlineDay } from '@/domain/deadlines';
 import { differenceInCalendarDays, startOfMonth, startOfWeek } from 'date-fns';
 import { bucketOf, hasLabel, isOpen, splitQuick } from '@/domain/views';
 import type { RowOrder } from '@/domain/dnd';
@@ -246,7 +247,7 @@ export function sortItems(
         // they are due, not in whatever order they happen to sit in.
         return b.priority - a.priority || compareDue(a, b) || manualCompare(a, b, order, ranks);
       case 'deadline':
-        return (a.deadline?.date ?? '9999').localeCompare(b.deadline?.date ?? '9999') || manualCompare(a, b, order);
+        return (deadlineDay(a) ?? '9999').localeCompare(deadlineDay(b) ?? '9999') || manualCompare(a, b, order);
       case 'project':
         return (snapshot?.projects[a.project_id]?.name ?? '').localeCompare(snapshot?.projects[b.project_id]?.name ?? '') || manualCompare(a, b, order);
       case 'description':

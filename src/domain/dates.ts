@@ -3,6 +3,7 @@ import {
   parseISO, startOfDay, startOfWeek,
 } from 'date-fns';
 import type { Item, TodoistDue } from './types';
+import { deadlineDay } from './deadlines';
 
 /** True when the due value carries a time of day, not just a calendar date. */
 export const hasTime = (due: TodoistDue | null): boolean =>
@@ -16,9 +17,10 @@ export function dueDate(item: Item): Date | null {
   return item.due.date.includes('T') ? parseISO(item.due.date) : startOfDay(parseISO(item.due.date));
 }
 
+/** Todoist's deadline, or the one kept in the description on a free plan (domain/deadlines). */
 export function deadlineDate(item: Item): Date | null {
-  if (!item.deadline) return null;
-  return startOfDay(parseISO(item.deadline.date));
+  const day = deadlineDay(item);
+  return day ? startOfDay(parseISO(day)) : null;
 }
 
 export const isOverdue = (item: Item, now = new Date()): boolean => {

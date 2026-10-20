@@ -22,11 +22,12 @@ import type { Locale, TranslationKey } from '@/i18n';
 import { APP_NAME, AUTHOR, AUTHOR_AVATAR_URL, AUTHOR_GITHUB_URL, COFFEE_URL, GITHUB_URL, LINKEDIN_URL, VERSION, X_URL } from '@/app-info';
 import { karmaStanding } from '@/domain/karma';
 import { projectTree } from '@/store/selectors';
+import { deadlineStorage, type DeadlineSettings, type DeadlineStorageChoice } from '@/domain/deadlines';
 
 /** Where the things this app only reads are changed. */
 const TODOIST_ACCOUNT_URL = 'https://app.todoist.com/app/settings/account';
 
-const SECTIONS = ['account', 'general', 'appearance', 'sidebar', 'lists', 'features', 'conflicts', 'about'] as const;
+const SECTIONS = ['account', 'general', 'appearance', 'sidebar', 'lists', 'features', 'deadlines', 'conflicts', 'about'] as const;
 
 /** A date with two digits in the day and a month that is short in both
  *  languages, so every option in the list is the same length. */
@@ -36,7 +37,7 @@ type Section = (typeof SECTIONS)[number];
 /** The glyph beside each entry of the menu. */
 const SECTION_ICON: Record<Section, IconName> = {
   account: 'user', general: 'settings', appearance: 'palette', sidebar: 'sidebar',
-  lists: 'list', features: 'sparkles', conflicts: 'warning', about: 'info',
+  lists: 'list', features: 'sparkles', deadlines: 'deadline', conflicts: 'warning', about: 'info',
 };
 
 /**
@@ -78,6 +79,12 @@ export function SettingsView() {
   };
   const daysTotal = prefs.dailyCapacity.reduce((sum, minutes) => sum + minutes, 0);
 
+  const setDeadlines = (patch: Partial<DeadlineSettings>) =>
+    setPrefs({ deadlines: { ...useStore.getState().prefs.deadlines, ...patch } });
+  const projects = useStore((s) => s.snapshot.projects);
+  const rollableProjects = Object.values(projects)
+    .filter((project) => !project.is_deleted && !project.is_archived && !project.is_folder)
+    .sort((a, b) => Number(Boolean(b.inbox_project)) - Number(Boolean(a.inbox_project)) || a.name.localeCompare(b.name));
   const toggle = (key: keyof typeof prefs.conflicts) =>
     setPrefs({ conflicts: { ...prefs.conflicts, [key]: !prefs.conflicts[key] } });
 
@@ -483,6 +490,65 @@ export function SettingsView() {
               >
                 {t('settings.restore')}
               </button>
+            </Row>
+          </section>
+
+          {/* ------------------------------------------------- Deadlines (fork feature) */}
+          <section className="setsection" id="deadlines">
+            <h2>{t('settings.deadlines')}</h2>
+            <Row
+              title={t('deadline.storage')}
+              hint={t(deadlineStorage(prefs.deadlines, user) === 'native' ? 'deadline.storageNativeHint' : 'deadline.storageDescriptionHint')}
+            >
+              <Select
+                value={prefs.deadlines.storage}
+                ariaLabel={t('deadline.storage')}
+                onChange={(value) => setDeadlines({ storage: value as DeadlineStorageChoice })}
+                options={[
+                  { value: 'auto', label: t('deadline.storageAuto') },
+                  { value: 'description', label: t('deadline.storageDescription') },
+                  { value: 'native', label: t('deadline.storageNative') },
+                ]}
+              />
+            </Row>
+            <Row title={t('deadline.soonDays')} hint={t('deadline.soonDaysHint')}>
+              <Select
+                value={String(prefs.deadlines.soonDays)}
+                ariaLabel={t('deadline.soonDays')}
+                onChange={(value) => setDeadlines({ soonDays: Number(value) })}
+                options={[1, 2, 3, 5, 7, 14].map((days) => ({ value: String(days), label: t('deadline.days', { count: days }) }))}
+              />
+            </Row>
+            <h3 className="setsubhead">{t('deadline.groupRollover')}</h3>
+            <Row title={t('deadline.rollover')} hint={t('deadline.rolloverHint')}>
+              <Switch checked={prefs.deadlines.rollover} onChange={() => setDeadlines({ rollover: !prefs.deadlines.rollover })} label={t('deadline.rollover')} />
+            </Row>
+            <Row title={t('deadline.rollUndated')} hint={t('deadline.rollUndatedHint')}>
+              <Switch checked={prefs.deadlines.rollUndated} onChange={() => setDeadlines({ rollUndated: !prefs.deadlines.rollUndated })} label={t('deadline.rollUndated')} />
+            </Row>
+            <Row title={t('deadline.escalate')} hint={t('deadline.escalateHint')}>
+              <Switch checked={prefs.deadlines.escalate} onChange={() => setDeadlines({ escalate: !prefs.deadlines.escalate })} label={t('deadline.escalate')} />
+            </Row>
+            <Row title={t('deadline.projects')} hint={t('deadline.projectsHint')} wide>
+              <div className="dl-projects">
+                {rollableProjects.map((project) => {
+                  const on = !prefs.deadlines.excludedProjects.includes(project.id);
+                  return (
+                    <label key={project.id} className="dl-project">
+                      <Switch
+                        checked={on}
+                        label={project.name}
+                        onChange={() => setDeadlines({
+                          excludedProjects: on
+                            ? [...prefs.deadlines.excludedProjects, project.id]
+                            : prefs.deadlines.excludedProjects.filter((id) => id !== project.id),
+                        })}
+                      />
+                      <span>{project.name}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </Row>
           </section>
 

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   deadlineFields, deadlineOf, deadlineStatus, deadlineStorage, descriptionDeadline, isIsoDay,
-  joinDeadlineTail, readDeadlineSettings, readDeadlineToken, routeDeadline, splitDeadlineTail,
+  joinDeadlineTail, readDeadlineSettings, routeDeadline, splitDeadlineTail,
   withDeadlineLine,
 } from './deadlines';
+import { readDeadlineToken } from './deadlineToken';
 import { item } from '@/test/items';
 
 describe('reading a deadline line', () => {

@@ -13,7 +13,7 @@
  */
 
 export const SIDEBAR_ITEMS = [
-  'inbox', 'today', 'week', 'upcoming', 'someday',
+  'inbox', 'today', 'week', 'upcoming', 'deadlines', 'someday',
   'review', 'dashboard', 'logbook', 'matrix', 'labels', 'filters',
 ] as const;
 export type SidebarItemId = (typeof SIDEBAR_ITEMS)[number];
@@ -28,7 +28,7 @@ export interface SidebarNav {
   other: SidebarEntry[];
 }
 
-const MAIN: SidebarItemId[] = ['inbox', 'today', 'week', 'upcoming', 'someday'];
+const MAIN: SidebarItemId[] = ['inbox', 'today', 'week', 'upcoming', 'deadlines', 'someday'];
 const OTHER: SidebarItemId[] = ['review', 'dashboard', 'logbook', 'matrix', 'labels', 'filters'];
 
 export const defaultSidebarNav = (): SidebarNav => ({

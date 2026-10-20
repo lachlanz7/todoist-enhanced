@@ -1,0 +1,56 @@
+name: Deadline rollover
+
+# Fork only, and only when switched on: rolls late tasks forward even on days
+# the app is never opened, with the same rules as the app (src/domain/rollover.ts)
+# and the deadline settings the app keeps in your Todoist account.
+#
+# To switch it on:
+#   1. Settings → Secrets and variables → Actions → Secrets → New secret
+#      TODOIST_API_TOKEN = your token (Todoist → Settings → Integrations →
+#      Developer). It is only ever read from the secret: never put it in a file.
+#   2. Variables → ROLLOVER_ENABLED = true
+#   3. Run it once by hand with "dry run" ticked and read the log.
+#
+# The log only gives counts: Action logs of a public repository are public, so
+# no task or project name is ever printed. Scheduled workflows run from the
+# default branch, so this file has to be on it (see the README's fork notes).
+on:
+  schedule:
+    # Every three hours. Running more often changes nothing: a task already on
+    # today is left alone.
+    - cron: '41 */3 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Decide and report, but send nothing
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deadline-rollover
+  cancel-in-progress: false
+
+jobs:
+  rollover:
+    if: vars.ROLLOVER_ENABLED == 'true' && github.repository != 'julesvbertolino/todoist-enhanced'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build the script
+        run: npx esbuild scripts/rollover.ts --bundle --platform=node --format=esm --tsconfig=tsconfig.app.json --outfile=.rollover/rollover.mjs
+      - name: Roll late tasks forward
+        run: node .rollover/rollover.mjs
+        env:
+          TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'true' || 'false' }}
+          # Leave unset to use the time zone of the Todoist account.
+          TZ: ${{ vars.ROLLOVER_TZ }}

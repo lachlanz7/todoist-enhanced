@@ -1,0 +1,31 @@
+/* Deadlines on every plan and their countdown (fork feature). Kept in a file
+   of its own so the upstream stylesheets merge without conflicts. */
+
+/* A deadline close at hand turns amber, one that has passed turns red. The
+   same in every chip style: in the classic text layout and as a pill. */
+.meta .deadline.dl-soon,
+.meta .deadline.dl-today{color:var(--p2)}
+.meta .deadline.dl-overdue{color:var(--late);font-weight:600}
+:root:not([data-chips="classic"]) :is(.task, .tcard, .preview-task) .meta > .deadline.dl-soon,
+:root:not([data-chips="classic"]) :is(.task, .tcard, .preview-task) .meta > .deadline.dl-today{--chip-fg:var(--p2)}
+:root:not([data-chips="classic"]) :is(.task, .tcard, .preview-task) .meta > .deadline.dl-overdue{--chip-fg:var(--late)}
+:root[data-chips="inherited"] :is(.task, .tcard, .preview-task) .meta > .deadline.dl-overdue{
+  --chip-bg:color-mix(in srgb, var(--late) 10%, var(--surface));
+}
+.meta .deadline .dl-count{margin-left:.35em;font-variant-numeric:tabular-nums}
+.meta .deadline .dl-count::before{content:'·';margin-right:.35em;opacity:.6}
+
+/* In the task panel, beside the Deadline field. */
+.prop[data-prop="deadline"]{flex-wrap:wrap}
+.dl-status{font-size:var(--fs-12, 12px);font-weight:600;margin-left:var(--s2, 8px);align-self:center}
+.dl-status.dl-today,.dl-status.dl-soon{color:var(--p2)}
+.dl-status.dl-overdue{color:var(--late)}
+.dl-source{font-size:var(--fs-12, 12px);color:var(--muted);margin-left:var(--s2, 8px);align-self:center;cursor:help}
+
+/* The composer's mark for `{Nov 2}`. */
+.nmark.deadline{--mark:var(--deadline)}
+
+/* Settings: one switch per project. */
+.dl-projects{display:grid;grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));gap:var(--s2, 8px) var(--s4, 16px);width:100%}
+.dl-project{display:flex;align-items:center;gap:var(--s2, 8px);min-width:0;cursor:pointer}
+.dl-project span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

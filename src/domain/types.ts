@@ -367,6 +367,8 @@ export type ViewId =
   /** Today on its own, when the sidebar is set to separate it from the week. */
   | 'today'
   | 'upcoming'
+  /** Every open task with a deadline, soonest first (fork feature). */
+  | 'deadlines'
   | 'someday'
   | 'review'
   | 'dashboard'

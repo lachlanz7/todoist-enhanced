@@ -23,6 +23,7 @@ import {
 import {
   deadlineDate, dueDate, formatRelativeDay, hasTime, toApiDate, toApiDateTime,
 } from '@/domain/dates';
+import { deadlineOf, deadlineStatus, joinDeadlineTail, splitDeadlineTail } from '@/domain/deadlines';
 import { plainTitle, renderTitle, titleLinks } from '@/domain/markdown';
 import { parseShorthand, savedRefusals, type TextRange } from '@/domain/shorthand';
 import { dueForDate } from '@/domain/recurrence';
@@ -262,6 +263,7 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
   const demo = useStore((s) => s.demo);
   /* A window over the list, or a panel on the right (Settings → Open a task in). */
   const variant = useStore((s) => s.prefs.taskOpen) === 'panel' ? 'side' : 'sheet';
+  const deadlineSoonDays = useStore((s) => s.prefs.deadlines.soonDays);
   const confirm = useConfirm();
   /* Named, so the panel's own keys can tell whether it is the dialog in front. */
   const overlayId = useId();
@@ -424,7 +426,8 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
   useEffect(() => {
     if (!item) return;
     setTitle(item.content);
-    setDescription(item.description);
+    // A deadline kept at the end of the description is shown as its own field, not as text.
+    setDescription(splitDeadlineTail(item.description).body);
     setEditingDescription(false);
     setEditingTitle(false);
     setAddingSubtask(false);
@@ -461,6 +464,10 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
   const priority = toDisplayPriority(item.priority);
   const due = dueDate(item);
   const deadline = deadlineDate(item);
+  /* The trailing deadline line is drawn as the Deadline field; the lines above
+     it keep their numbers, so a checklist tick still finds its line. */
+  const shownDescription = splitDeadlineTail(item.description).body;
+  const closeness = deadline && !item.checked ? deadlineStatus(item, new Date(), deadlineSoonDays) : null;
   const subtasks = childrenOf(item.id);
   const doneSubtasks = subtasks.filter((c) => c.checked).length;
   const { minutes, computed } = effectiveEstimate(item, childrenOf);
@@ -537,6 +544,7 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
     if (next !== item.content) fields.content = next;
     if (read.date) fields.due = dueForDate(item.due, read.date);
     if (read.priority) fields.priority = toTodoistPriority(read.priority);
+    if (read.deadline) fields.deadline = { date: read.deadline, lang: locale };
 
     let labels = item.labels;
     if (read.labels.length > 0) labels = [...new Set([...labels, ...read.labels])];
@@ -576,6 +584,7 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
       read.priority ? `P${read.priority}` : null,
       ...read.labels.map((label) => `@${label}`),
       read.minutes !== null ? formatDuration(read.minutes, locale) : null,
+      read.deadline ? `${t('detail.deadline')} ${formatRelativeDay(new Date(`${read.deadline}T00:00:00`), locale)}` : null,
     ].filter(Boolean);
     if (applied.length > 0) toast(applied.join(' · '));
 
@@ -587,7 +596,9 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
   };
   const commitDescription = () => {
     setEditingDescription(false);
-    if (description !== item.description) void updateTask(item.id, { description });
+    const latest = useStore.getState().snapshot.items[item.id]?.description ?? item.description;
+    const { body, tail } = splitDeadlineTail(latest);
+    if (description !== body) void updateTask(item.id, { description: joinDeadlineTail(description, tail) });
   };
   /* The box is ticked on the text as it is now, not as it was when the panel
      opened: two ticks in a row, or one after a sync, lose neither (#157). */
@@ -598,7 +609,7 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
   };
   /* Opened on what the task says now: a box ticked since the panel opened is in it. */
   const startEditingDescription = () => {
-    setDescription(useStore.getState().snapshot.items[item.id]?.description ?? item.description);
+    setDescription(splitDeadlineTail(useStore.getState().snapshot.items[item.id]?.description ?? item.description).body);
     setEditingDescription(true);
   };
 
@@ -897,7 +908,7 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
                 <div
                   role="button"
                   tabIndex={0}
-                  className={`descview${item.description ? '' : ' placeholder'}`}
+                  className={`descview${shownDescription ? '' : ' placeholder'}`}
                   onClick={(e) => {
                     // A link is followed and a box is ticked; neither opens the editor.
                     if ((e.target as Element).closest('a[href], .checkitem input')) return;
@@ -913,8 +924,8 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
                   }}
                   aria-label={t('detail.description')}
                 >
-                  {item.description ? (
-                    <DescriptionView value={item.description} onToggle={tickChecklist} />
+                  {shownDescription ? (
+                    <DescriptionView value={shownDescription} onToggle={tickChecklist} />
                   ) : (
                     t('detail.descriptionPlaceholder')
                   )}
@@ -1041,6 +1052,16 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
               onChange={(value) =>
                 void updateTask(item.id, { deadline: value ? { date: value, lang: locale } : null })}
             />
+            {closeness && closeness.tone !== 'later' && (
+              <span className={`dl-status dl-${closeness.tone}`}>
+                {closeness.tone === 'today' ? t('deadline.today')
+                  : closeness.tone === 'soon' ? t('deadline.left', { count: closeness.days })
+                    : t('deadline.over', { count: -closeness.days })}
+              </span>
+            )}
+            {deadlineOf(item)?.source === 'description' && (
+              <span className="dl-source" title={t('deadline.inDescriptionHint')}>{t('deadline.inDescription')}</span>
+            )}
           </div>
 
           <div className="prop" data-prop="estimate">

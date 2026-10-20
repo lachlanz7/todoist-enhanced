@@ -5,6 +5,7 @@ import * as idb from '@/db/idb';
 import { fetchComments, fetchTask, itemFromCompleted, setCommentReaction } from '@/api/tasks';
 import { isUncompletable, toTodoistPriority, type Item, type Note, type Snapshot } from '@/domain/types';
 import { canStoreDurations, estimatePatch } from '@/domain/estimates';
+import { deadlineStorage, routeDeadline } from '@/domain/deadlines';
 import { toApiDate } from '@/domain/dates';
 import { firstDayOfRule, ruleFromString } from '@/domain/repeatRule';
 import { readTime } from '@/domain/nlp';
@@ -32,7 +33,10 @@ function planTask(
   snapshot: Snapshot,
   args: Record<string, unknown>,
   storage: 'tag' | 'duration',
+  deadlines: 'native' | 'description' = 'native',
 ): { commands: Command[]; items: Record<string, Item> } {
+    // A deadline goes where this account keeps them: Todoist's field, or the description.
+    args = routeDeadline({ deadline: null, description: '' }, args, deadlines);
     const { estimateMinutes, ...fields } = args;
     args = estimateMinutes === undefined ? fields : { ...fields, ...estimatePatch({ labels: (fields.labels as string[]) ?? [] }, estimateMinutes as number | null, storage) };
     const tempId = newUuid();
@@ -327,7 +331,8 @@ export const createTasksSlice: Slice<TasksSlice> = (set, get) => ({
   async updateTask(id, args) {
     const item = get().snapshot.items[id];
     if (!item) return;
-    const { estimateMinutes: minutes, ...fields } = args;
+    const { estimateMinutes: minutes, ...rest } = args;
+    const fields = routeDeadline(item, rest, deadlineStorage(get().prefs.deadlines, get().snapshot.user));
     const storage = get().prefs.estimateStorage === 'duration' && canStoreDurations(get().snapshot.user) ? 'duration' : 'tag';
     const patch = minutes === undefined ? fields : { ...fields, ...estimatePatch({ labels: (fields.labels as string[]) ?? item.labels }, minutes as number | null, storage) };
     const cmd = updateItem(id, patch);
@@ -600,7 +605,7 @@ export const createTasksSlice: Slice<TasksSlice> = (set, get) => ({
       get().toast(translate(prefs.locale, 'assignee.invalid'));
       return null;
     }
-    const planned = planTask(snapshot, args, prefs.estimateStorage === 'duration' && canStoreDurations(snapshot.user) ? 'duration' : 'tag');
+    const planned = planTask(snapshot, args, prefs.estimateStorage === 'duration' && canStoreDurations(snapshot.user) ? 'duration' : 'tag', deadlineStorage(prefs.deadlines, snapshot.user));
     const tempId = Object.keys(planned.items)[0];
     const mapping = await get().apply(planned.commands, (current) => ({ ...current, items: { ...current.items, ...planned.items } }));
     const id = mapping[tempId] ?? tempId;
@@ -625,7 +630,7 @@ export const createTasksSlice: Slice<TasksSlice> = (set, get) => ({
         get().toast(translate(get().prefs.locale, 'assignee.invalid'));
         return false;
       }
-      const planned = planTask({ ...snapshot, items: { ...snapshot.items, ...created } }, args, get().prefs.estimateStorage === 'duration' && canStoreDurations(snapshot.user) ? 'duration' : 'tag');
+      const planned = planTask({ ...snapshot, items: { ...snapshot.items, ...created } }, args, get().prefs.estimateStorage === 'duration' && canStoreDurations(snapshot.user) ? 'duration' : 'tag', deadlineStorage(get().prefs.deadlines, snapshot.user));
       requested.push(Object.keys(planned.items)[0]);
       commands.push(...planned.commands);
       Object.assign(created, planned.items);

@@ -76,6 +76,8 @@ export function Search({ open, onClose, onOpen, seed = '' }: SearchProps) {
       { key: 'go-week', icon: 'week', title: t('nav.week'), run: go(() => navigate('week')) },
       { key: 'go-upcoming', icon: 'upcoming', title: t('nav.upcoming'),
         run: go(() => navigate('upcoming')) },
+      { key: 'go-deadlines', icon: 'deadline', title: t('nav.deadlines'),
+        run: go(() => navigate('deadlines')) },
       { key: 'go-someday', icon: 'someday', title: t('nav.someday'),
         run: go(() => navigate('someday')) },
       { key: 'go-review', icon: 'check', title: t('nav.review'),

@@ -180,3 +180,24 @@ describe('+name gives the task to a person of the project (#269)', () => {
     expect(read('Send the file +Anne').assigneeId).toBeNull();
   });
 });
+
+describe('a deadline in braces (fork feature)', () => {
+  it('reads {date} as the deadline, takes it out of the name and leaves the due date alone', () => {
+    const parsed = parseShorthand('Essay {2026-11-02} tomorrow', snapshot, true);
+    expect(parsed.deadline).toBe('2026-11-02');
+    expect(parsed.content).toBe('Essay');
+    expect(parsed.date).not.toBeNull();
+    expect(parsed.ranges.some((r) => r.kind === 'deadline')).toBe(true);
+  });
+
+  it('reads it even with natural dates off, and not when refused', () => {
+    expect(parseShorthand('Essay {2026-11-02}', snapshot, false).deadline).toBe('2026-11-02');
+    expect(parseShorthand('Essay {2026-11-02}', snapshot, false, [{ start: 6, end: 18 }]).deadline).toBeNull();
+  });
+
+  it('leaves braces without a date as text', () => {
+    const parsed = parseShorthand('Read {chapter} 3', snapshot, true);
+    expect(parsed.deadline).toBeNull();
+    expect(parsed.content).toBe('Read {chapter} 3');
+  });
+});

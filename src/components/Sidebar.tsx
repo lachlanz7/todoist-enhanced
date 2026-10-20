@@ -286,6 +286,7 @@ export function Sidebar({
       case 'today': return navItem('today', 'calendar', 'nav.today', counts.today, { kind: 'today' });
       case 'week': return navItem('week', 'week', 'nav.week', counts.week, { kind: 'anytime' });
       case 'upcoming': return navItem('upcoming', 'upcoming', 'nav.upcoming', counts.upcoming);
+      case 'deadlines': return navItem('deadlines', 'deadline', 'nav.deadlines', 0);
       case 'someday': return navItem('someday', 'someday', 'nav.someday', counts.someday, { kind: 'someday' });
       case 'review': return navItem('review', 'check', 'nav.review', 0);
       case 'dashboard':

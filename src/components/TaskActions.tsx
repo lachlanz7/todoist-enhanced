@@ -21,6 +21,7 @@ import { EstimateField } from './EstimateField';
 import { DatePicker, shortDay, taskShortcuts, type RecurrenceReading } from './DatePicker';
 import { nextOccurrence } from '@/domain/nextOccurrence';
 import { formatDayOrName, formatTime, toApiDate } from '@/domain/dates';
+import { deadlineDay } from '@/domain/deadlines';
 import { dueForDate } from '@/domain/recurrence';
 import { weekLabel } from '@/domain/types';
 import { markerStyle } from '@/domain/colors';
@@ -537,7 +538,7 @@ export function TaskActions({ item, childrenOf, onOpen, onKeep, contextOnly = fa
       </div>}
       {menu === 'deadline' && <div className={`popover rowmenu schedulemenu${phone ? ' asSheet' : placement.className}`} role="menu" ref={placement.ref}>
         {back}
-        <DatePicker value={item.deadline?.date ?? ''} label={t('detail.deadline')} onEscape={() => setMenu('none')} onPick={(date) => {
+        <DatePicker value={deadlineDay(item) ?? ''} label={t('detail.deadline')} onEscape={() => setMenu('none')} onPick={(date) => {
           setMenu('none'); void updateTask(item.id, { deadline: date ? { date: date.slice(0, 10), lang: locale } : null });
         }} />
       </div>}

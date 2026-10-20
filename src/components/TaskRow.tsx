@@ -8,6 +8,7 @@ import { ProgressRing } from './ProgressRing';
 import { ProjectIcon } from './ProjectIconPicker';
 import { readProjectIcon } from '@/domain/projectIcons';
 import { withoutChecklist } from '@/domain/checklist';
+import { deadlineStatus, splitDeadlineTail } from '@/domain/deadlines';
 import { useRowTarget } from './dnd/useRowTarget';
 import {
   GROUP_ATTR, RowListContext, SUBTASK_DRAG_PREFIX, TASK_DROP_EVENT, TASK_PLACE_EVENT, groupAnswers, useRowList,
@@ -153,6 +154,7 @@ export function TaskRow({
   const { t, locale } = useT();
   const snapshot = useStore((s) => s.snapshot);
   const hour12 = useStore((s) => s.prefs.hour12);
+  const soonDays = useStore((s) => s.prefs.deadlines.soonDays);
   const toggleTask = useStore((s) => s.toggleTask);
   const keepInSomeday = useStore((s) => s.keepInSomeday);
   const picked = useStore((s) => s.selection.includes(item.id));
@@ -199,10 +201,12 @@ export function TaskRow({
   const priority = toDisplayPriority(item.priority);
   const due = dueDate(item);
   const deadline = deadlineDate(item);
+  /* How close the deadline is, for an open task: flagged once it is near. */
+  const closeness = deadline && !item.checked ? deadlineStatus(item, new Date(), soonDays) : null;
   const late = isOverdue(item);
   const project = snapshot.projects[item.project_id];
   const projectIcon = project ? readProjectIcon(project.description) : null;
-  const preview = useMemo(() => withoutChecklist(item.description), [item.description]);
+  const preview = useMemo(() => withoutChecklist(splitDeadlineTail(item.description).body), [item.description]);
   const section = showSection && item.section_id ? snapshot.sections[item.section_id] : undefined;
 
   /**
@@ -279,9 +283,16 @@ export function TaskRow({
       </span>
     ),
     deadline: deadline && (
-      <span className="deadline" key="deadline">
+      <span
+        className={`deadline${closeness && closeness.tone !== 'later' ? ` dl-${closeness.tone}` : ''}`}
+        key="deadline"
+        title={t('deadline.chipTitle')}
+      >
         <Icon name="deadline" />
         {formatRelativeDay(deadline, locale)}
+        {/* A countdown once it is close: "3d left", "2d over". */}
+        {closeness?.tone === 'soon' && <span className="dl-count">{t('deadline.left', { count: closeness.days })}</span>}
+        {closeness?.tone === 'overdue' && <span className="dl-count">{t('deadline.over', { count: -closeness.days })}</span>}
       </span>
     ),
     project: showProject && project && (

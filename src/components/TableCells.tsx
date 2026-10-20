@@ -7,6 +7,7 @@ import { useStore } from '@/store/store';
 import { useT } from '@/hooks/useT';
 import { effectiveEstimate, formatDuration } from '@/domain/estimates';
 import { dateTone, isOverdue } from '@/domain/dates';
+import { deadlineDay } from '@/domain/deadlines';
 import { toDisplayPriority, toTodoistPriority, type Item, type TableColumn, type DisplayPriority } from '@/domain/types';
 import { tableColumnLabel } from '@/domain/table';
 import { markerStyle } from '@/domain/colors';
@@ -24,7 +25,7 @@ export function TableCells({ item, columns, childrenOf }: { item: Item; columns:
     let content;
     if (column === 'date' || column === 'deadline') {
       const due = column === 'date';
-      content = <DateField value={(due ? item.due?.date : item.deadline?.date) ?? ''}
+      content = <DateField value={(due ? item.due?.date : deadlineDay(item)) ?? ''}
         label={t(tableColumnLabel[column])} withTime={due}
         recurrence={due && item.due?.is_recurring ? { string: item.due.string, lang: item.due.lang } : null}
         onRecurrence={due ? (rule) => void setRecurrence(item.id, rule) : undefined}

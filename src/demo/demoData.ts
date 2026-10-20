@@ -5,6 +5,7 @@ import type {
 import { emptySnapshot } from '@/domain/types';
 import type { Locale } from '@/i18n';
 import { demoFilterRecords } from './demoFilters';
+import { withDeadlineLine } from '@/domain/deadlines';
 
 /**
  * A made-up account, so the product can be shown or tried without connecting
@@ -333,6 +334,14 @@ export function buildDemoSnapshot(locale: Locale = 'en', seed = 20260914): Snaps
     const [content, description] = copy.tasks[index % copy.tasks.length];
     addItem({ content, description, ...shape } as Partial<Item> & { content: string });
   });
+
+  /* Fork feature: two deadlines kept as a line of the description, the way a
+     free Todoist plan keeps them (domain/deadlines). On tasks dated in the
+     future, so nothing in the demo rolls over by itself. */
+  for (const [index, days] of [[13, 7], [14, 12]] as const) {
+    const target = items[`demo-${index + 1}`];
+    if (target) target.description = withDeadlineLine(target.description, iso(addDays(today, days)));
+  }
 
   // One parent with subtasks, so hierarchy and rolled-up estimates are visible.
   const parent = addItem({

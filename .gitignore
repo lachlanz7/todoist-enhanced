@@ -19,3 +19,6 @@ REDDIT-*.md
 # Playwright
 test-results/
 playwright-report/
+
+# Built by the deadline rollover Action.
+.rollover/

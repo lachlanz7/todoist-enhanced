@@ -17,6 +17,7 @@ export const ENTRY: Record<SidebarItemId, { icon: IconName; label: TranslationKe
   today: { icon: 'calendar', label: 'nav.today' },
   week: { icon: 'week', label: 'nav.week' },
   upcoming: { icon: 'upcoming', label: 'nav.upcoming' },
+  deadlines: { icon: 'deadline', label: 'nav.deadlines' },
   someday: { icon: 'someday', label: 'nav.someday' },
   review: { icon: 'check', label: 'nav.review' },
   dashboard: { icon: 'trend', label: 'nav.dashboard' },

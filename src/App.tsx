@@ -51,6 +51,8 @@ import { rootItems } from './store/selectors';
 import { detectConflicts } from './domain/conflicts';
 import { placementForPage } from './domain/dnd';
 import { useParentEstimates } from './hooks/useParentEstimates';
+import { useDeadlineRollover } from './hooks/useDeadlineRollover';
+import { DeadlinesView } from './views/DeadlinesView';
 import { bucketOf, hasLabel, somedayItems, upcomingItems, weekItems } from './domain/views';
 import { effectiveEstimate } from './domain/estimates';
 import type { Item } from './domain/types';
@@ -147,6 +149,7 @@ export function App() {
 
   useEffect(() => { void init(); }, [init]);
   useParentEstimates();
+  useDeadlineRollover();
 
   /* A task or a project made before Todoist answered is opened under its
      temporary id. When the answer lands — after reconnecting, most of all —
@@ -835,6 +838,7 @@ function AppShell({
           {route.view === 'today' && <WeekView {...viewProps} scope="today" />}
           {route.view === 'search' && <SearchView query={route.query ?? ''} onOpen={openTask} />}
           {route.view === 'upcoming' && <UpcomingView {...viewProps} />}
+          {route.view === 'deadlines' && <DeadlinesView onOpen={openTask} />}
           {route.view === 'someday' && <SimpleListView kind="someday" {...viewProps} />}
           {/* The Inbox is a project like the others, with sections of its own
              : it is drawn by the project page, which is what shows them. */}

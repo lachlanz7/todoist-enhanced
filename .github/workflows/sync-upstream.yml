@@ -1,0 +1,33 @@
+name: Sync upstream
+
+# Fork only: keeps this fork's `main` an exact mirror of the original project
+# (julesvbertolino/todoist-enhanced) by fast-forwarding it every day. It never
+# merges or rewrites anything: if `main` has commits of its own, the fast-
+# forward is refused and the run fails, so look before forcing anything.
+#
+# Scheduled workflows run from the repository's default branch, so this file
+# has to be on that branch (see "Fork notes" in the README).
+#
+# If upstream ever changes a file under .github/workflows, GitHub refuses the
+# update with the built-in token. Add a fine-grained personal access token with
+# Contents and Workflows write access as the secret SYNC_TOKEN, or press
+# "Sync fork" on the repository page once.
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    # Never on the original repository.
+    if: github.repository != 'julesvbertolino/todoist-enhanced'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fast-forward main from upstream
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_TOKEN || github.token }}
+        run: gh api --method POST "repos/${GITHUB_REPOSITORY}/merge-upstream" -f branch=main

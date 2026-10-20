@@ -5,6 +5,7 @@ import { findLinks } from './markdown';
 import { readRecurrence, type RecurrenceLang } from './recurrence';
 import { parseDurationInput } from './estimates';
 import { colorValue } from './colors';
+import { readDeadlineToken } from './deadlineToken';
 import type { DisplayPriority, Snapshot } from './types';
 
 /**
@@ -32,7 +33,7 @@ import type { DisplayPriority, Snapshot } from './types';
  */
 
 export type HighlightKind =
-  'date' | 'recurrence' | 'project' | 'priority' | 'label' | 'duration' | 'link' | 'assignee';
+  'date' | 'recurrence' | 'project' | 'priority' | 'label' | 'duration' | 'link' | 'assignee' | 'deadline';
 
 export interface Highlight {
   start: number;
@@ -79,6 +80,8 @@ export interface Shorthand {
   recurrence: { string: string; lang: RecurrenceLang; fromCompletion: boolean } | null;
   /** An estimate in minutes, written in brackets: "Call Anne (25)". */
   minutes: number | null;
+  /** A deadline, `yyyy-MM-dd`, written in braces as Todoist does: "Essay {Nov 2}". */
+  deadline: string | null;
   /** Where each of the above sits in the original string. */
   ranges: Highlight[];
 }
@@ -247,6 +250,16 @@ export function parseShorthand(
   }
   if (durationClaim) claim(durationClaim.start, durationClaim.length, 'duration');
 
+  /* `{Nov 2}` is a deadline, in Todoist's own quick-add syntax: explicit, so
+     read whatever the date setting says, and before the date reader, which
+     would otherwise take the words inside the braces for the task's date. */
+  let deadline: string | null = null;
+  const braces = readDeadlineToken(mask(raw, [...ranges, ...refused, ...linkRanges]), new Date(), dateFormat);
+  if (braces) {
+    deadline = braces.date;
+    claim(braces.start, braces.length, 'deadline', 'var(--deadline)');
+  }
+
   /* The recurrence is read before the date and out of the same text, because
      the two compete for the same words: "every monday" contains a weekday the
      date reader would otherwise take for next Monday, dating the task once
@@ -331,7 +344,7 @@ export function parseShorthand(
   const clean = dedupe(ranges);
   return {
     content: strip(raw, clean),
-    projectId, sectionId, priority, labels, assigneeId, date, recurrence, minutes,
+    projectId, sectionId, priority, labels, assigneeId, date, recurrence, minutes, deadline,
     ranges: clean,
   };
 }
